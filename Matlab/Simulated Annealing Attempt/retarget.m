@@ -1,7 +1,7 @@
 function new_target = retarget(distance,target)
     % Randomly selects target with a probability inversely related to
     % distance
-    distance(target) = [];
+    %distance(target) = [];
     
     inverse_distance = zeros(1,length(distance));
     sum = 0;

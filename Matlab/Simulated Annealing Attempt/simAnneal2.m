@@ -6,10 +6,10 @@ clc
 width = 100;
 height = 100;
 
-targets = 5;
-robots = 25;
+targets = 30;
+robots = 150;
 
-target_sizes = [2,5,7,4,7];
+target_sizes = [2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7];
 
 target_loc = zeros(2,targets);
 robot_loc = zeros(2,robots);
@@ -36,18 +36,23 @@ for r = 1:robots
 end
 
 % Plot the scene
-draw_step(target_loc,robot_loc,targeted);
+%figure(1)
+%draw_step(target_loc,robot_loc,targeted);
 
 % Set the threshold for switching based on initial allocation
 threshold = set_threshold(target_sizes,targeted);
 
-for i =1:50
+error_exists = true;
+i = 0;
+tic
+while error_exists
+    i=i+1;
     robot_loc = relocate(target_loc,robot_loc,targeted);
     %pause(0.15)
-    draw_step(target_loc,robot_loc,targeted);
+    %draw_step(target_loc,robot_loc,targeted);
     for r=1:robots
-        if (rand()<threshold(targeted(r)))
-            disp('SWITCH');
+        if (rand()<threshold(targeted(r))/(1+exp(-.2*(distance(r,targeted(r))-2.5))))
+            %disp('SWITCH');
             targeted(r) = retarget(distance(r,:),targeted(r));
         end
     end
@@ -64,8 +69,13 @@ end
 error(i,:) =abs((su-target_sizes));
 
 tot_err(i,1) = sum(error(i,:));
+
+if tot_err(i,1)==0
+    error_exists = false;
 end
 
+end
+toc
 figure(2)
 plot(tot_err);
 
