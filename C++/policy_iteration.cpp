@@ -8,7 +8,7 @@
 const float discount = 0.90;
 const int r = 15;
 const int t = 5;
-const int targetSize[] = {2,5,3,4,1};//{2,5,7,4,7};
+const int targetSize[] = {2,2,4,1,6};//,1,1,1};//{2,5,3,4,1};//{2,5,7,4,7};
 
 using namespace std;
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
@@ -130,14 +130,35 @@ int argmax(vector<int> actions, vector<float> rewards){
 	return max_action;
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-int generate_hash(vector<int> state){
+unsigned long int generate_hash(vector<int> state){
 
     int tmp;
     tmp = 0;
     for (int i =1; i<state.size();i++){
-        tmp += state[i]*pow(r,i-1);
+        tmp += ceil(state[i]*pow(r,i-1));
+    }
+    tmp += ceil(state[0]*pow(r,t));
+    //cout << endl;
+    //printVector(state);
+    //cout << tmp << endl;
+    return tmp;
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+unsigned long int generate_hash2(vector<int> state){
+    vector<int> debug;
+
+    int tmp;
+    tmp = 0;
+    for (int i =1; i<state.size();i++){
+        tmp += ceil(state[i]*pow(r,i-1));
+        cout << state[i]*pow(r,i-1) << endl;
+        debug.push_back(ceil(state[i]*pow(r,i-1)));
     }
     tmp += state[0]*pow(r,t);
+    //cout << state[0]*pow(r,t) << endl;
+    //debug.push_back(tmp);
+    printVector(debug);
+cout << endl << " Hash is: " <<tmp << endl;
     return tmp;
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
@@ -174,7 +195,6 @@ for (int a=0;a<t;a++){
 	}
 }
 
-
 // Print out all of the allowable states
 // Clean up artifact element at end of state vector
 for (int i=0;i<states.size();i++){
@@ -206,7 +226,7 @@ vector<int> tmp_state;
 vector<int> allowable;
 vector <vector<int> >allowable_result;
 vector<float> allowable_utility;
-vector<int> hash_code;
+vector<unsigned long int> hash_code;
 
 
 for (int s=0;s<states.size();s++){
@@ -268,16 +288,19 @@ a.push_back(1);
 
 cout << endl << endl;
 FILE * fid;
-fid = fopen("Policy_P2.txt","w");
+FILE * mapping;
+mapping = fopen("../Matlab/Policy Iteration Attempt/Mapping.txt","w");
+fid = fopen("../Matlab/Policy Iteration Attempt/Policy_P2.txt","w");
 for (int z=0;z<states.size();z++){
     hash_code.push_back(generate_hash(states[z]));
+    if (hash_code[z] == 506491){
+            generate_hash2(states[z]);
+    }
     fprintf(fid,"%d %d\n",hash_code[z],Policy[z]);
+    //fprintf(mapping, "%d : %d %d %d %d %d %d\n",hash_code[z],states[z][0],states[z][1],states[z][2],states[z][3],states[z][4],states[5][0]);
+    fprintf(mapping, "%5d : %d %d %d %d %d %d\n",hash_code[z],states[z][0],states[z][1],states[z][2],states[z][3],states[z][4],states[z][5]);//,states[z][2],states[z][3],states[z][4],states[5][0]);
     //cout << hash_code[z] << " : " ;
     //printVector(states[z]);
-    if ((states[z][0]==3)&&(states[z][1] == 2)&& (states[z][2] ==5)){
-        printVector(states[z]);
-        cout << hash_code[z]<< endl;
-    }
 }
 
 fclose(fid);

@@ -47,3 +47,9 @@
 *.mtc1
 *.out
 *.synctex.gz
+
+#GAMA Workspace Management
+/GAMA/.gama_application_workspace
+/GAMA/.gama_application_workspace/*
+/GAMA/.metadata/*
+/GAMA/.models_version_.built_in_models_1399834931152
