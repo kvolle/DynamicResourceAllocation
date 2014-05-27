@@ -1,9 +1,9 @@
-classdef agent
+classdef agent < handle
     methods
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-        function robot = agent(Location,Target)
-            robot.location = Location;
-            robot.target = Target;
+        function robot = agent()
+            robot.location = [ceil(rand()*100);ceil(rand()*100)];
+            robot.target = -1;
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %%% This needs changed quite a bit
@@ -15,21 +15,30 @@ classdef agent
             end
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-        function new_target = retarget(distance,target)
+        function distance_ordering(robot,target_loc)
+            robot.distance = zeros(1,length(target_loc));
+            robot.target_order = zeros(1,length(target_loc));
+            for j = 1:length(target_loc)
+                robot.distance(j) = sqrt((robot.location(1)-target_loc(1,j))^2 + (robot.location(2)-target_loc(2,j))^2);
+            end
+                [~,robot.target_order(:)]= sort(robot.distance);
+        end
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
+        function retarget(robot)
             % Randomly selects target with a probability inversely related to
             % distance
-            distance(target) = [];
-            inverse_distance = zeros(1,length(distance));
+            robot.distance(robot.target) = [];
+            inverse_distance = zeros(1,length(robot.distance));
             sum = 0;
-            for d = 1:length(distance)
-                inverse_distance(d) = 1/distance(d) + sum;
+            for d = 1:length(robot.distance)
+                inverse_distance(d) = 1/robot.distance(d) + sum;
                 sum = inverse_distance(d);
             end
             probability = inverse_distance./sum;
             Q = rand();
             for i=1:length(probability)
                 if (Q<probability(i))
-                    new_target = i;
+                    robot.target = i;
                     return
                 end
             end
@@ -69,5 +78,8 @@ classdef agent
     properties
         location
         target
+        distance
+        target_order
+        threshold
     end
 end
