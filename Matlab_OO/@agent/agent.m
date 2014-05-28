@@ -1,7 +1,8 @@
 classdef agent < handle
     methods
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-        function robot = agent()
+        function robot = agent(ID)
+            robot.id = ID-1;
             robot.location = [ceil(rand()*100);ceil(rand()*100)];
             robot.target = -1;
         end
@@ -44,12 +45,12 @@ classdef agent < handle
             end
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-        function state = get_state(targeted,agent,targets)
+        function state = get_state(robot,targeted,targets)
             state = zeros(1,targets+1);
-            state(1) = targeted(agent);
+            state(1) = targeted(robot.id+1)-1;
             for i = 0:targets-1
                 for j = 1:length(targeted)
-                    if (targeted(j) == i) % If robot j is attacking target i
+                    if (targeted(j) == i+1) % If robot j is attacking target i
                         state(i+2) = state(i+2) + 1;
                     end
                 end
@@ -57,25 +58,9 @@ classdef agent < handle
 
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-        function hash = get_hash(state,r,t)
-            hash = 0;
-            for i =2:length(state)
-                hash = hash + state(i)*(r^(i-2));
-            end
-            hash = hash + state(1)*(r^t);
-        end
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-        function action = get_action(policy,hash)
-            action = -1;
-            for i=1:length(policy)
-                if(hash == policy(i,1))
-                    action = policy(i,2);
-                end
-            end
-        end
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
     end
     properties
+        id
         location
         target
         distance

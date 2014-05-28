@@ -8,7 +8,7 @@
 const float discount = 0.90;
 const int r = 15;
 const int t = 5;
-const int targetSize[] = {2,2,4,1,6};//,1,1,1};//{2,5,3,4,1};//{2,5,7,4,7};
+const int targetSize[] = {2,5,4,1,3};//{2,5,7,4,7};
 
 using namespace std;
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
@@ -287,10 +287,11 @@ a.push_back(1);
 
 
 cout << endl << endl;
-FILE * fid;
+
 FILE * mapping;
-mapping = fopen("../Matlab/Policy Iteration Attempt/Mapping.txt","w");
-fid = fopen("../Matlab/Policy Iteration Attempt/Policy_P2.txt","w");
+mapping = fopen("../Matlab_OO/Mapping.txt","w");
+FILE * fid;
+fid = fopen("../Matlab_OO/Policy_P2.txt","w");
 for (int z=0;z<states.size();z++){
     hash_code.push_back(generate_hash(states[z]));
     if (hash_code[z] == 506491){
@@ -298,7 +299,8 @@ for (int z=0;z<states.size();z++){
     }
     fprintf(fid,"%d %d\n",hash_code[z],Policy[z]);
     //fprintf(mapping, "%d : %d %d %d %d %d %d\n",hash_code[z],states[z][0],states[z][1],states[z][2],states[z][3],states[z][4],states[5][0]);
-    fprintf(mapping, "%5d : %d %d %d %d %d %d\n",hash_code[z],states[z][0],states[z][1],states[z][2],states[z][3],states[z][4],states[z][5]);//,states[z][2],states[z][3],states[z][4],states[5][0]);
+fprintf(mapping, "%5d : %d %d %d %d %d %d\n",hash_code[z],states[z][0],states[z][1],states[z][2],states[z][3],states[z][4],states[z][5]);
+
     //cout << hash_code[z] << " : " ;
     //printVector(states[z]);
 }

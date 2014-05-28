@@ -3,16 +3,18 @@
 clear all
 clc
 
+% Import the policy
+policy_table = importdata('Policy_P2.txt');
 % Define the workspace
 width = 100;
 height = 100;
 
 % Define the number of targets and agents
-targets = 30;
-robots = 150;
+targets = 5;
+robots = 15;
 
 % Define the sizes of the targets
-target_sizes = [2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7];
+target_sizes = [2 5 4 1 3];%[2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7];
 
 %Instantiate targets spaced randomly
 target_loc = zeros(2,targets);
@@ -49,22 +51,25 @@ threshold = set_threshold(target_sizes,targeted);
 error_exists = true;
 i = 0;
 tic
+
 while (error_exists && i<1000)
     i=i+1;
     %robot_loc = relocate(target_loc,robot_loc,targeted);
     %pause(0.15)
     %draw_step(target_loc,robot_loc,targeted);
     for r=1:robots
-        % threshold times sigmoid function based on distance
-        if (rand()<threshold(targeted(r))/(1+exp(-.2*(robot_array(r).distance(targeted(r))-15))))
-            robot_array(r).retarget();
-            targeted(r) = robot_array(r).target;
-            robot_array(r).distance_ordering(target_loc);
+        state = robot_array(r).get_state(targeted,targets);
+        hash = get_hash(state,robots,targets);
+        robot_array(r).target = get_action(policy_table,hash);
+        targeted(r) = robot_array(r).target+1;
+        if targeted(r) <0
+            disp('ERROR');
         end
-    end
-    threshold = set_threshold(target_sizes,targeted);
-    su = zeros(1,targets);
 
+
+    end
+    
+    su = zeros(1,targets);
     for t = 1:length(target_sizes)
         for r = 1:length(targeted)
             if targeted(r) == t
@@ -81,6 +86,7 @@ while (error_exists && i<1000)
     end
 
 end
+targeted
 toc
 figure(2)
 plot(tot_err);
