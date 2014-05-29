@@ -34,6 +34,7 @@ for r = 1:robots
     robot_array(r) = agent(r);
     robot_array(r).distance_ordering(target_loc);
     robot_array(r).target = robot_array(r).target_order(1);
+    robot_array(r).adjust_velocity(target_loc);
     % Fill the ground truth array of who everyone is targeting
     targeted(r) = robot_array(r).target;
 end
@@ -49,7 +50,7 @@ threshold = set_threshold(target_sizes,targeted);
 error_exists = true;
 i = 0;
 tic
-while (error_exists && i<1000)
+while (error_exists && i<10000)
     i=i+1;
     %robot_loc = relocate(target_loc,robot_loc,targeted);
     %pause(0.15)
@@ -58,6 +59,7 @@ while (error_exists && i<1000)
         % threshold times sigmoid function based on distance
         if (rand()<threshold(targeted(r))/(1+exp(-.2*(robot_array(r).distance(targeted(r))-15))))
             robot_array(r).retarget();
+            robot_array(r).adjust_velocity(target_loc);
             targeted(r) = robot_array(r).target;
             robot_array(r).distance_ordering(target_loc);
         end

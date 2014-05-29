@@ -5,14 +5,21 @@ classdef agent < handle
             robot.id = ID-1;
             robot.location = [ceil(rand()*100);ceil(rand()*100)];
             robot.target = -1;
+            robot.velocity = [0;0];
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %%% This needs changed quite a bit
-        function robot_loc = relocate(target_loc,robot_loc,targeted)
-            % Fly 10% of the way towards the target, this needs to change
-            for r=1:length(robot_loc)
-                robot_loc(1,r) = 0.00*(target_loc(1,targeted(r))-robot_loc(1,r))+robot_loc(1,r);
-                robot_loc(2,r) = 0.00*(target_loc(2,targeted(r))-robot_loc(2,r))+robot_loc(2,r);
+        function relocate(robot,dt)
+            robot.location = robot.location + robot.velocity*dt;
+        end
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
+        function adjust_velocity(robot,target_loc)
+            goal_loc = target_loc(robot.target);
+            goal_dist = goal_loc-robot.location;
+            if goal_dist(1)^2+goal_dist(2)^2 >0.25
+                robot.velocity = .01*goal_dist/(goal_dist(1)^2+goal_dist(2)^2);
+            else
+                robot.velocity = [0;0];
             end
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
@@ -62,6 +69,7 @@ classdef agent < handle
     properties
         id
         location
+        velocity
         target
         distance
         target_order
