@@ -4,17 +4,17 @@
 %clc
 function err = policy_implementation2()
 % Import the policy
-policy_table = importdata('Policy_P2.txt');
+policy_table = importdata('Policy_P3.txt');
 % Define the workspace
 width = 100;
 height = 100;
 
 % Define the number of targets and agents
 targets = 5;
-robots = 15;
+robots = 5;
 
 % Define the sizes of the targets
-target_sizes = [2 5 4 1 3];%[2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7];
+target_sizes = [1 1 1 1 1];%[2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7];
 
 %Instantiate targets spaced randomly
 target_loc = zeros(2,targets);
@@ -100,10 +100,10 @@ while (error_exists && i<1000 && valid_hashes)
     end
 %}
 end
-%targeted
+targeted
 toc
 %figure(2)
-%plot(tot_err);
+plot(tot_err);
 err =tot_err(i);
 end
 %plot(error(:,1),'r');
