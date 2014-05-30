@@ -6,11 +6,18 @@
 #include <time.h>
 
 const float discount = 0.90;
-const int r = 3;
-const int t = 3;
-const int targetSize[] = {1,1,1};//{2,5,4,1,3};//{2,5,7,4,7};
+const int r = 15;
+const int t = 5;
+const int targetSize[] = {2,5,4,1,3};//{2,5,7,4,7};
 
 using namespace std;
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+class mdp_solver
+{
+public:
+    mdp_solver(){
+    }
+};
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 void printVector(vector <int> &vec){
 
@@ -162,170 +169,122 @@ cout << endl << " Hash is: " <<tmp << endl;
     return tmp;
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+void onExit(vector< vector<int> > states,vector<int> Policy){
+    vector<unsigned long int> hash_code;
+    FILE * mapping;
+    mapping = fopen("../Matlab_OO/Mapping.txt","w");
+    FILE * fid;
+    fid = fopen("../Matlab_OO/Policy_P2.txt","w");
+    for (int z=0;z<states.size();z++){
+        hash_code.push_back(generate_hash(states[z]));
+        if (hash_code[z] == 506491){
+                generate_hash2(states[z]);
+        }
+        fprintf(fid,"%d %d\n",hash_code[z],Policy[z]);
+        //fprintf(mapping, "%d : %d %d %d %d %d %d\n",hash_code[z],states[z][0],states[z][1],states[z][2],states[z][3],states[z][4],states[5][0]);
+    fprintf(mapping, "%5d : %d %d %d %d : %d\n",hash_code[z],states[z][0],states[z][1],states[z][2],states[z][3], Policy[z]);
+    }
+    fclose(fid);
+    fclose(mapping);
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 int main(){
+    vector<int> state;
+    vector<vector<int> > states;
+    vector<int> Policy;
+    atexit(onExit(states,Policy));
+    unsigned long tmp;
 
-unsigned long tmp;
-
-unsigned long dim =  (unsigned long)pow(r+1,t);
-
-vector<int> state;
-vector<vector<int> > states;
-
-//cout << dim << endl;
-int total;
-
-for (int a=0;a<t;a++){
-	for (int i=0;i<dim;i++){
-		tmp = i;
-
-		total = 0;
-		for (int j=0;j<t+1;j++){
-			state.push_back(tmp%(r+1));
-			tmp = tmp/(r+1);
-			total = total + state.back();
-		}
-		if (total==r){
-			if (state[a] > 0){
-				state.insert(state.begin(),a);
-				states.push_back(state);
-			}
-		}
-		state.clear();
-
-	}
-}
-
-// Print out all of the allowable states
-// Clean up artifact element at end of state vector
-for (int i=0;i<states.size();i++){
-//	cout << i << ": ";
-	states[i].erase(states[i].end()-1);
-	//printVector(states[i]);
-}
-
-cout << "\nTotal: "<< dim*t;
-cout << "\n Good: "<< states.size() << endl;
+    unsigned long dim =  (unsigned long)pow(r+1,t);
 
 
-vector<int> Policy;
-srand (time(NULL));
-for (int i=0;i<states.size();i++){
-    Policy.push_back(rand()%t);
-}
 
-vector<float> U;
-vector<float> U_prime;
+    //cout << dim << endl;
+    int total;
 
-bool changed = true;
+    for (int a=0;a<t;a++){
+        for (int i=0;i<dim;i++){
+            tmp = i;
 
-U.resize(states.size(),0);
-U_prime.resize(states.size(),0);
+            total = 0;
+            for (int j=0;j<t+1;j++){
+                state.push_back(tmp%(r+1));
+                tmp = tmp/(r+1);
+                total = total + state.back();
+            }
+            if (total==r){
+                if (state[a] > 0){
+                    state.insert(state.begin(),a);
+                    states.push_back(state);
+                }
+            }
+            state.clear();
 
-vector<int> new_state;
-vector<int> tmp_state;
-vector<int> allowable;
-vector <vector<int> >allowable_result;
-vector<float> allowable_utility;
-vector<unsigned long int> hash_code;
-
-
-for (int s=0;s<states.size();s++){
-    U_prime[s] = R(states[s]);
-}
-
-cout << endl;
-do{
-//for (int cnt = 0;cnt<100;cnt++){
-   	U.swap(U_prime);
-	U_prime.clear();
-	U_prime.resize(states.size(),0);
-    for (int st = 0;st<states.size();st++){
-        new_state = prediction(states[st],Policy[st]);
-        U_prime[st] = R(states[st])+discount*R(new_state);
-        new_state.clear();
+        }
     }
 
-    // TODO policy-eval
-	for (int s=0;s<states.size();s++){
-		for (int action=0;action<t;action++){
-			new_state = prediction(states[s], action);
-			if (new_state[0] >= 0){
-				allowable.push_back(action);
-				allowable_utility.push_back(U[locate(states,new_state)]);
-				allowable_result.push_back(new_state);
-			}
-			new_state.clear();
-		}
-		tmp_state = prediction(states[s],Policy[s]);
-		/*
-		if (argmax(allowable,allowable_utility) == 173){
-            cout << "Allowable:" << endl;
-            printVector(allowable);
-            cout << "Utility:" << endl;
-            pv(allowable_utility);
-            system("pause");
-		}
-		*/
-		// If any of the allowable actions results in higher utility than current policy
-		if (U[argmax(allowable,allowable_utility)] > U[locate(states,tmp_state)]){
-                Policy[s] = argmax(allowable,allowable_utility);
-                changed = true;
-		}
-		tmp_state.clear();
-
-		allowable.clear();
-		allowable_result.clear();
-		allowable_utility.clear();
-	}
-    changed = false;
-
-}while(changed);
-
-vector<int> a;
-a.push_back(4);
-a.push_back(14);
-a.push_back(0);
-a.push_back(0);
-a.push_back(0);
-a.push_back(1);
-
-
-cout << endl << endl;
-
-FILE * mapping;
-mapping = fopen("../Matlab/Mapping.txt","w");
-FILE * fid;
-fid = fopen("../Matlab/Policy_P2.txt","w");
-for (int z=0;z<states.size();z++){
-    hash_code.push_back(generate_hash(states[z]));
-    if (hash_code[z] == 506491){
-            generate_hash2(states[z]);
+    // Print out all of the allowable states
+    // Clean up artifact element at end of state vector
+    for (int i=0;i<states.size();i++){
+    //	cout << i << ": ";
+        states[i].erase(states[i].end()-1);
+        //printVector(states[i]);
     }
-    fprintf(fid,"%d %d\n",hash_code[z],Policy[z]);
-    //fprintf(mapping, "%d : %d %d %d %d %d %d\n",hash_code[z],states[z][0],states[z][1],states[z][2],states[z][3],states[z][4],states[5][0]);
-fprintf(mapping, "%5d : %d %d %d %d : %d\n",hash_code[z],states[z][0],states[z][1],states[z][2],states[z][3], Policy[z]);
 
-    //cout << hash_code[z] << " : " ;
-    //printVector(states[z]);
-}
-
-fclose(fid);
-int tot=0;
-for (int su=0;su<Policy.size();su++){
-    tot+=Policy[su];
-
-}
-cout << (float) tot/(float)Policy.size() << endl;
-/*
-cout <<"1: " << R(states[0],0) << endl;
-cout <<"2: " << R(states[0],1) << endl;
-cout <<"3: " << R(states[1],0) << endl;
-cout <<"4: " << R(states[1],1) << endl;
-cout <<"5: " << R(states[2],0) << endl;
-cout <<"6: " << R(states[2],1) << endl;
-cout <<"7: " << R(states[3],0) << endl;
-cout <<"8: " << R(states[3],1) << endl;
-*/
+    cout << "\nTotal: "<< dim*t;
+    cout << "\n Good: "<< states.size() << endl;
 
 
+    vector<float> U;
+    U.resize(states.size(),0);
+    //vector<float> U_prime;
+    //U_prime.resize(states.size(),0);
+
+    vector<int> new_state;
+    vector<int> tmp_state;
+    float q;
+    //vector<int> allowable;
+    //vector <vector<int> >allowable_result;
+    //vector<float> allowable_utility;
+
+    bool unchanged = false;
+    // Arbitrarily set initial Policy
+    srand (time(NULL));
+    for (int i=0;i<states.size();i++){
+        Policy.push_back(int (rand()%t));
+        U[i]=0;
+    }
+    int counter =0;
+    do{
+            counter+=1;
+            cout << counter << endl;
+            unchanged = true;
+            for (int s=0;s<states.size();s++){
+                //U[s] = sum_s'[P(s'|s,a)(R(s,a,s')+discount*U[s'])]
+                tmp_state.clear();
+                tmp_state=prediction(states[s],Policy[s]);
+                U[s] = R(tmp_state)+discount*U[locate(states,tmp_state)];
+            }
+
+            for (int s=0;s<states.size();s++){
+                for (int a=0;a<t;a++){
+                    //q = sum_s'[P(s'|s,a)(R(s,a,s')+discount*U[s'])]
+                    tmp_state.clear();
+                    tmp_state = prediction(states[s],a);
+                    q = R(tmp_state)+discount*U[locate(states,tmp_state)];
+                    if (q >U[s]){
+                        Policy[s] = a;
+                        U[s] = q;
+                        unchanged = false;
+                    }
+                }
+            }
+    }while(!unchanged);
+
+    int tot=0;
+    for (int su=0;su<Policy.size();su++){
+        tot+=Policy[su];
+
+    }
+    cout << (float) tot/(float)Policy.size() << endl;
 }

@@ -58,7 +58,7 @@ while (error_exists && i<10000)
     for r=1:robots
         % threshold times sigmoid function based on distance
         if (rand()<threshold(targeted(r))/(1+exp(-.2*(robot_array(r).distance(targeted(r))-15))))
-            robot_array(r).retarget();
+            robot_array(r).retarget(target_loc);
             robot_array(r).adjust_velocity(target_loc);
             targeted(r) = robot_array(r).target;
             robot_array(r).distance_ordering(target_loc);

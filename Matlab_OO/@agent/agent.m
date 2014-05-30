@@ -32,21 +32,42 @@ classdef agent < handle
                 [~,robot.target_order(:)]= sort(robot.distance);
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-        function retarget(robot)
+        function retarget(robot,target_loc)
             % Randomly selects target with a probability inversely related to
             % distance
-            robot.distance(robot.target) = [];
-            inverse_distance = zeros(1,length(robot.distance));
+            
+            % Get heading difference
+            delta_heading = zeros(1,length(target_loc));
+            target_heading = target_loc - robot.Location;
+            for t=0:length(target_heading)
+                delta_heading(t) = abs((180/pi)*acos(dot([target_heading;0],[robot_velocity;0])/(norm([target_heading;0])*norm([robot_velocity;0]))));
+            end
+            
+            candidate_targets = 1:length(delta_heading)+1;
+            candidate_distance = robot.distance;
+            
+            candidate_targets(robot.target) = [];
+            candidate_distance(robot.target) = [];
+            exclude = [];
+            for i = 1:length(candidate_targets)
+                if delta_heading(i) > 30
+                    exclude = [exclude i]
+                end
+            end
+            candidate_targets(exclude) =[];
+            candidate_distance(exclude) = [];
+            
+            inverse_distance = zeros(1,length(candidate_distance));
             sum = 0;
-            for d = 1:length(robot.distance)
-                inverse_distance(d) = 1/robot.distance(d) + sum;
+            for d = 1:length(candidate_distance)
+                inverse_distance(d) = 1/candidate_distance(d) + sum;
                 sum = inverse_distance(d);
             end
             probability = inverse_distance./sum;
             Q = rand();
             for i=1:length(probability)
                 if (Q<probability(i))
-                    robot.target = i;
+                    robot.target = candidate_targets(i);
                     return
                 end
             end
