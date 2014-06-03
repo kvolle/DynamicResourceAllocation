@@ -50,7 +50,7 @@ threshold = set_threshold(target_sizes,targeted);
 error_exists = true;
 i = 0;
 tic
-while (error_exists && i<10000)
+while (error_exists && i<1000)
     i=i+1;
     %robot_loc = relocate(target_loc,robot_loc,targeted);
     %pause(0.15)

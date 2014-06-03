@@ -146,8 +146,6 @@ int main(){
    vector<vector<int> > states;
    vector<float> U;
    int total;
-   cout << "\nTotal: "<< dim*t;
-   cout << "\n Good: "<< states.size() << endl;
    bool unchanged = false;
    unsigned long tmp;
    unsigned long dim =  (unsigned long)pow(r+1,t);
@@ -161,7 +159,7 @@ int main(){
                 tmp = tmp/(r+1);
                 total = total + state.back();
             }
-            if (total==r){
+            if (total<=r){
                 if (state[a] > 0){
                     state.insert(state.begin(),a);
                     states.push_back(state);
@@ -178,44 +176,65 @@ int main(){
         states[i].erase(states[i].end()-1);
         //printVector(states[i]);
     }
-
+   cout << "\nTotal: "<< dim*t;
+   cout << "\n Good: "<< states.size() << endl;
     // Arbitrarily set initial Policy
     srand (time(NULL));
     U.resize(states.size(),0);
+
     for (int i=0;i<states.size();i++){
-        Policy.push_back(int (rand()%t));
+        tmp_state = states[i];
+        Policy.push_back(*min_element(tmp_state.begin()+1,tmp_state.end()));
+        //Policy.push_back(int (rand()%t));
         U[i]=0;
     }
     int counter =0;
     float q;
+    vector<int> location_tmp;
+    vector<vector<int> > location_vector;
+    vector<vector<int> > prediction_tmp;
+    vector<vector<vector<int> > > prediction_vector;
+    cout << "Pre-calculations" << endl;
+    for (int s=0;s<states.size();s++){
+        for (int a=0;a<t;a++){
+            tmp_state = prediction(states[s],a);
+            prediction_tmp.push_back(tmp_state);
+            location_tmp.push_back(locate(states,tmp_state));
+        }
+        prediction_vector.push_back(prediction_tmp);
+        location_vector.push_back(location_tmp);
+        prediction_tmp.clear();
+        location_tmp.clear();
+    }
+    cout << "Solver" << endl;
     do{
             counter+=1;
-            cout << counter << endl;
             unchanged = true;
             for (int s=0;s<states.size();s++){
                 //U[s] = sum_s'[P(s'|s,a)(R(s,a,s')+discount*U[s'])]
                 tmp_state.clear();
-                tmp_state=prediction(states[s],Policy[s]);
-                U[s] = R(tmp_state)+discount*U[locate(states,tmp_state)];
+                tmp_state=prediction_vector[s][Policy[s]];
+                U[s] = R(tmp_state)+discount*U[location_vector[s][Policy[s]]];
             }
-            for (int s=0;s<tates.size();s++){
+            for (int s=0;s<states.size();s++){
                 for (int a=0;a<t;a++){
                     //q = sum_s'[P(s'|s,a)(R(s,a,s')+discount*U[s'])]
                     // This next if statement is kinda fishy
                     //test asap and remove if doesn't work or doesn't help
-                    if (states[a+1]<targetSize[a]){
-                        tmp_state.clear();
-                        tmp_state = prediction(states[s],a);
-                        q = R(tmp_state)+discount*U[locate(states,tmp_state)];
+                    //if (states[s][a+1]<targetSize[a]){
+//                        tmp_state.clear();
+                        tmp_state = prediction_vector[s][a];
+                        q = R(tmp_state)+discount*U[location_vector[s][a]];
                         if (q >U[s]){
                             Policy[s] = a;
                             U[s] = q;
                             unchanged = false;
                         }
-                    }
+                    //}
                 }
             }
     }while(!unchanged);
+    cout << counter << endl;
     vector<unsigned long int> hash_code;
     FILE * mapping;
     mapping = fopen("../Matlab_OO/Mapping.txt","w");

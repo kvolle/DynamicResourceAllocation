@@ -33,12 +33,29 @@ classdef agent < handle
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
         function retarget(robot,target_loc)
+            robot.distance(robot.target) = [];
+            inverse_distance = zeros(1,length(robot.distance));
+            sum = 0;
+            for d = 1:length(robot.distance)
+                inverse_distance(d) = 1/robot.distance(d) + sum;
+                sum = inverse_distance(d);
+            end
+            probability = inverse_distance./sum;
+            Q = rand();
+            for i=1:length(probability)
+                if (Q<probability(i))
+                    robot.target = i;
+                    return
+                end
+            end
+            %{
             % Randomly selects target with a probability inversely related to
             % distance
-            
             % Get heading difference
             delta_heading = zeros(1,length(target_loc));
-            target_heading = target_loc - robot.Location;
+
+            target_heading = bsxfun(@minus,target_loc,robot.location);
+            
             for t=0:length(target_heading)
                 delta_heading(t) = abs((180/pi)*acos(dot([target_heading;0],[robot_velocity;0])/(norm([target_heading;0])*norm([robot_velocity;0]))));
             end
@@ -49,6 +66,7 @@ classdef agent < handle
             candidate_targets(robot.target) = [];
             candidate_distance(robot.target) = [];
             exclude = [];
+            %{
             for i = 1:length(candidate_targets)
                 if delta_heading(i) > 30
                     exclude = [exclude i]
@@ -56,7 +74,7 @@ classdef agent < handle
             end
             candidate_targets(exclude) =[];
             candidate_distance(exclude) = [];
-            
+            %}
             inverse_distance = zeros(1,length(candidate_distance));
             sum = 0;
             for d = 1:length(candidate_distance)
@@ -71,6 +89,8 @@ classdef agent < handle
                     return
                 end
             end
+            %}
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
         function state = get_state(robot,targeted,targets)

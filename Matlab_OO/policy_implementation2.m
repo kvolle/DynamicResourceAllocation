@@ -10,11 +10,11 @@ width = 100;
 height = 100;
 
 % Define the number of targets and agents
-robots = 11;
-targets = 4;
+robots = 15;
+targets = 5;
 
 % Define the sizes of the targets
-target_sizes = [2,2,4,3];%[2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7];
+target_sizes = [2,5,4,1,3];%[2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7];
 
 %Instantiate targets spaced randomly
 target_loc = zeros(2,targets);
@@ -52,21 +52,35 @@ valid_hashes = true;
 i = 0;
 
 streak = 0;
-while (error_exists && i<1000 && valid_hashes)
+
+while (error_exists && i<10 && valid_hashes)
     i=i+1;
     %robot_loc = relocate(target_loc,robot_loc,targeted);
     %pause(0.15)
     %draw_step(target_loc,robot_loc,targeted);
     %if streak<10
+    
         for r=1:robots
-            state = robot_array(r).get_state(targeted,targets);
+            state = robot_array(r).get_state(targeted,targets)
             hash = get_hash(state,robots,targets);
             robot_array(r).target = get_action(policy_table,hash)+1;
             targeted(r) = robot_array(r).target;
+            targeted(r)
             if targeted(r) <0
                 valid_hashes = false;
             end
+            su = zeros(1,targets);
+            for t = 1:length(target_sizes)
+                for r = 1:length(targeted)
+                    if targeted(r) == t
+                        su(t) = su(t)+1;
+                    end
+                end
+            end
+            error(r,:) =abs((su-target_sizes));
+            tot_err(r) = sum(error(r,:));    
         end
+    
     %else
     %    disp('Beat the streak')
     %    for r=1:robots
@@ -75,17 +89,7 @@ while (error_exists && i<1000 && valid_hashes)
     %    end
     %end
     
-    su = zeros(1,targets);
-    for t = 1:length(target_sizes)
-        for r = 1:length(targeted)
-            if targeted(r) == t
-                su(t) = su(t)+1;
-            end
-        end
-    end
-    error(i,:) =abs((su-target_sizes));
-
-    tot_err(i) = sum(error(i,:));
+   
 
     if tot_err(i)==0
         error_exists = false;
@@ -105,7 +109,8 @@ i
 
 %figure(2)
 plot(tot_err);
-err =tot_err(i);
+%err =tot_err(i);
+err = 0;
 end
 %plot(error(:,1),'r');
 %hold on
