@@ -10,7 +10,10 @@ using namespace std;
 const float discount = 0.90;
 const int r = 15;
 const int t = 5;
-const int targetSize[] = {2,5,4,1,3};
+const double targetPriority[] = {1,1,1,1,1};//{20,50,40,10,30};
+const double threshold[] = {0.83,0.93,0.97,0.59,0.93};
+const double robot_effectiveness = 0.70;
+const double attrition_rate = 0.15;
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
@@ -30,14 +33,18 @@ for (int i=0;i<vec.size();i++){
 printf("\n");
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-float R(vector<int> state){
-int reward = 0;
-	for (int i=0;i<state.size()-1;i++){
-        if(abs(state[i+1]-targetSize[i])>100){
-//            cout << "   " << state[i+1] << " : " << targetSize[i] << endl;
+double R(vector<int> state){
+    double reward = 0;
+    // Calculate the Pk on each target;
+    double tmp_pk;
+    double pk_vector[5];
+    for (int t=1;t<state.size();t++){
+        tmp_pk=1;
+        for (int a=0;a<state[t];a++){
+            tmp_pk*=(1-robot_effectiveness+robot_effectiveness*attrition_rate);
         }
-		reward -= abs(state[i+1]-targetSize[i]);
-	}
+        reward += (1-tmp_pk-threshold[t-1]);
+    }
 	return reward;
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
@@ -81,36 +88,6 @@ new_state[0] = action;
 return new_state;
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-int argmax_a(vector<int>&state, vector<int> &allowable, vector<int> &allowable_values){
-int total_value[allowable.size()];
-int max_index = 0;
-vector <int> local_state;
-
-copy(state.begin(),state.end(),back_inserter(local_state));
-for (int a=0;a<allowable.size();a++){
-//	total_value[a] = R(local_state,a)+discount*allowable_values[a];
-	if (total_value[a] > total_value[max_index]){
-		max_index = a;
-	}
-}
-return max_index;
-}
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-int argmax(vector<int> actions, vector<float> rewards){
-	// This function takes vectors of allowed actions and the associated rewards and returns the best action
-	int max_action;
-	int max_reward;
-	max_action = 173;
-	max_reward = -100;
-	for (int i=0;i<actions.size();i++){
-		if (rewards[i] >max_reward){
-			max_reward = rewards[i];
-			max_action = actions[i];
-		}
-	}
-	return max_action;
-}
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 unsigned long int generate_hash(vector<int> state){
 
     int tmp;
@@ -121,25 +98,6 @@ unsigned long int generate_hash(vector<int> state){
     tmp += ceil(state[0]*pow(r,t));
     return tmp;
 }
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-unsigned long int generate_hash2(vector<int> state){
-    vector<int> debug;
-
-    int tmp;
-    tmp = 0;
-    for (int i =1; i<state.size();i++){
-        tmp += ceil(state[i]*pow(r,i-1));
-        cout << state[i]*pow(r,i-1) << endl;
-        debug.push_back(ceil(state[i]*pow(r,i-1)));
-    }
-    tmp += state[0]*pow(r,t);
-    //cout << state[0]*pow(r,t) << endl;
-    //debug.push_back(tmp);
-    printVector(debug);
-cout << endl << " Hash is: " <<tmp << endl;
-    return tmp;
-}
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 int main(){
    vector<int> state, new_state, tmp_state,Policy;
@@ -219,18 +177,14 @@ int main(){
             for (int s=0;s<states.size();s++){
                 for (int a=0;a<t;a++){
                     //q = sum_s'[P(s'|s,a)(R(s,a,s')+discount*U[s'])]
-                    // This next if statement is kinda fishy
-                    //test asap and remove if doesn't work or doesn't help
-                    //if (states[s][a+1]<targetSize[a]){
-//                        tmp_state.clear();
-                        tmp_state = prediction_vector[s][a];
-                        q = R(tmp_state)+discount*U[location_vector[s][a]];
-                        if (q >U[s]){
-                            Policy[s] = a;
-                            U[s] = q;
-                            unchanged = false;
-                        }
-                    //}
+                    //tmp_state.clear();
+                    tmp_state = prediction_vector[s][a];
+                    q = R(tmp_state)+discount*U[location_vector[s][a]];
+                    if (q >U[s]){
+                        Policy[s] = a;
+                        U[s] = q;
+                        unchanged = false;
+                    }
                 }
             }
     }while(!unchanged);
@@ -242,12 +196,8 @@ int main(){
     fid = fopen("../Matlab_OO/Policy_P2.txt","w");
     for (int z=0;z<states.size();z++){
         hash_code.push_back(generate_hash(states[z]));
-        if (hash_code[z] == 506491){
-                generate_hash2(states[z]);
-        }
         fprintf(fid,"%d %d\n",hash_code[z],Policy[z]);
-        //fprintf(mapping, "%d : %d %d %d %d %d %d\n",hash_code[z],states[z][0],states[z][1],states[z][2],states[z][3],states[z][4],states[5][0]);
-    fprintf(mapping, "%5d : %d %d %d %d : %d\n",hash_code[z],states[z][0],states[z][1],states[z][2],states[z][3], Policy[z]);
+        fprintf(mapping, "%5d : %d %d %d %d %d %d : %d\n",hash_code[z],states[z][0],states[z][1],states[z][2],states[z][3], states[z][4],states[z][5], Policy[z]);
     }
     fclose(fid);
     fclose(mapping);
