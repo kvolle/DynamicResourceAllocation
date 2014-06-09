@@ -6,8 +6,6 @@
 
 model communication
 
-/* Insert your model definition here */
-
 global{
 	int robots <- 2;
 
@@ -20,14 +18,14 @@ entities{
 	species robot skills: [communicating]{
 		list<int> targeting <- [rnd(4), rnd(4)];
 		list<int> locality <- [0,0];
-		list<string> message_to_send <-[];
+		list<string> message_to_send <-["T","e","s","t"];
 		reflex compose when: (flip(1)){
 			loop i from:0 to: 2*length(targeting)-1{
 				if even(i){
-					message_to_send[i] <- string(targeting at floor(i/2));
+					message_to_send[i] <- string(targeting at int(floor(i/2)));
 				}
 				else{
-					message_to_send[i] <- string(locality at floor(i/2));
+					message_to_send[i] <- string(locality at int(floor(i/2)));
 				}
 			}
 		}
