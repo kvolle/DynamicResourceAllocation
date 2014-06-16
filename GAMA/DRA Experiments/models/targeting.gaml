@@ -61,7 +61,8 @@ entities {
 		list<int> global_targeting <-[];
 		list<int> confidence <-[];
 		list<string> message_to_send <-[];
-		
+		bool changed <- false;
+		list<int> state<-[];
 		init {
 			target_aimed_at <- target closest_to(self);
 			loop i from:0 to:numberVehicles-1{
@@ -76,6 +77,11 @@ entities {
 			int identity <- vehicle index_of self;
 			global_targeting[identity]<-target index_of target_aimed_at;
 			confidence[identity]<-0;
+			state <- state+ target index_of target_aimed_at;
+			loop i from:1 to: numberTargets{
+				state <- state + i;
+				state[i]<-0;
+			}
 			//write "Vehicle " + name + " is aimed at " + target_aimed_at;
 		}
 		aspect circle {
@@ -86,6 +92,7 @@ entities {
 			target_aimed_at <- target closest_to(self);
 			int identity <- vehicle index_of self;
 			global_targeting[identity]<-target index_of target_aimed_at;
+			changed <- true;
 		}
 		reflex move_around when: flip (1){
 	
@@ -102,7 +109,7 @@ entities {
 				}
 			}
 			list<vehicle> listeners <- vehicle at_distance(200);
-			write name + " sent a message.";
+//			write name + " sent a message.";
 			do send with: [ receivers :: listeners, protocol :: 'no-protocol', performative :: 'inform', content ::  message_to_send ];
 		}
 		reflex check_mail when: (!empty(messages)){
@@ -113,6 +120,7 @@ entities {
 						if int(i.content at tmp_index) < confidence at int(floor(j/2)){
 							int tmp <-int(j/2);
 							global_targeting[tmp] <- int(i.content at j);
+							changed <-true;
 						}
 					}
 					else{
@@ -121,10 +129,32 @@ entities {
 						}
 					}
 				}
-				write name + " got a message from " + i.sender + " saying " + i.content;
+//				write name + " got a message from " + i.sender + " saying " + i.content;
 				//do send with : [ receivers :: i.sender, protocol :: 'no-protocol', performative :: 'accept-proposal', content :: ('Ok')];
 
 			}
+		}
+		reflex announce_death when: (robot_speed <1.0){
+//			target_aimed_at <-nil;
+			int identity <- vehicle index_of self;
+			global_targeting[identity]<- -1;
+			confidence[identity]<- -2;
+			loop i from:0 to: numberTargets{
+				state[i]<- -1;
+			}
+		}
+		reflex change_state when: changed{
+			state[0]<- target index_of target_aimed_at;
+			loop i from: 1 to: numberTargets{
+				state[i] <- 0;
+				loop j from: 0 to: numberVehicles-1{
+					if ((global_targeting[j]=i-1)and(confidence[j]>=0)){
+						state[i]<- state[i]+1;
+					}
+				}
+			}
+			changed <- false;
+			write state;
 		}
 	}
 }

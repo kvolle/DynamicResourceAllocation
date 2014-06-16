@@ -6,6 +6,7 @@ classdef agent < handle
             robot.location = [ceil(rand()*50);ceil(rand()*50)];
             robot.target = -1;
             robot.velocity = [0;0];
+            robot.heading = pi/2;
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 %%% This needs changed quite a bit
@@ -14,10 +15,12 @@ classdef agent < handle
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
         function adjust_velocity(robot,target_loc)
-            goal_loc = target_loc(robot.target);
+            goal_loc = target_loc(:,robot.target);
             goal_dist = goal_loc-robot.location;
-            if goal_dist(1)^2+goal_dist(2)^2 >0.25
-                robot.velocity = .01*goal_dist/(goal_dist(1)^2+goal_dist(2)^2);
+            robot.heading = atan2(goal_dist(2),goal_dist(1));
+            tot_dist = norm([goal_dist;0]);
+            if tot_dist>0.5
+                robot.velocity = 0.25*[cos(robot.heading);sin(robot.heading)];
             else
                 robot.velocity = [0;0];
             end
@@ -32,7 +35,41 @@ classdef agent < handle
                 [~,robot.target_order(:)]= sort(robot.distance);
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
+        function get_model(robot,targeted,numTargets)
+            robot.model = zeros(1,numTargets);
+            for t = 1:numTargets
+                for r = 1:length(targeted)
+                    if targeted(r) == t
+                        r0bot.model(t) = robot.model(t)+1;
+                    end
+                end
+            end
+        end
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
         function retarget(robot,target_loc)
+            for i = 1:length(target_loc)
+                candidate_targets(i) = i;
+                candidate_angle(i) = atan2(target_loc(2,i)-robot.location(2),target_loc(1,i)-robot.location(1))-robot.heading;
+            end
+            candidate_targets(robot.target) = [];
+            candidate_angle(robot.target) = [];
+
+            inverse_angle = zeros(1,length(candidate_angle));
+            sum = 0;
+            for d = 1:length(candidate_angle)
+                inverse_angle(d) = 1/candidate_angle(d) + sum;
+                sum = inverse_angle(d);
+            end
+            probability = inverse_angle./sum;
+            Q = rand();
+            for i=1:length(probability)
+                if (Q<probability(i))
+                    robot.target = candidate_targets(i);
+                    return
+                end
+            end
+            
+            %{
             robot.distance(robot.target) = [];
             inverse_distance = zeros(1,length(robot.distance));
             sum = 0;
@@ -48,6 +85,7 @@ classdef agent < handle
                     return
                 end
             end
+            %}
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
         function state = get_state(robot,targeted,targets)
@@ -68,9 +106,11 @@ classdef agent < handle
         id
         location
         velocity
+        heading
         target
         distance
         target_order
         threshold
+        model
     end
 end

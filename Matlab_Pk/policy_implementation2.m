@@ -2,22 +2,25 @@
 % This is the object oriented version
 clear all
 clc
+%function err = policy_implementation2()
 
+% Import the policy
+policy_table = importdata('Policy_P2.txt');
 % Define the workspace
 width = 100;
 height = 100;
 
 % Define the number of targets and agents
-targets = 30;
-robots = 150;
+robots = 15;
+targets = 5;
 
 % Define the sizes of the targets
-target_sizes = [2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7];
-
+target_sizes = [2,5,4,1,3];%[2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7];
+target_threshold = [0.835,0.988,0.973,0.595,0.933];
 %Instantiate targets spaced randomly
 target_loc = zeros(2,targets);
 for i = 1:targets
-    target_loc(:,i)=[ceil(rand()*50);ceil(rand()*50)+100];
+    target_loc(:,i)=[ceil(rand()*100);ceil(rand()*100)];
 end
 
 % Declare the world object
@@ -34,7 +37,6 @@ for r = 1:robots
     robot_array(r) = agent(r);
     robot_array(r).distance_ordering(target_loc);
     robot_array(r).target = robot_array(r).target_order(1);
-    robot_array(r).adjust_velocity(target_loc);
     % Fill the ground truth array of who everyone is targeting
     targeted(r) = robot_array(r).target;
 end
@@ -43,30 +45,24 @@ end
 %figure(1)
 %draw_step(target_loc,robot_loc,targeted);
 
-
-% Set the threshold for switching based on initial allocation
-threshold = set_threshold(target_sizes,targeted);
-
 error_exists = true;
+valid_hashes = true;
 i = 0;
-tic
-while (error_exists && i<1000)
+reward = zeros(1,10);
+
+while (error_exists && i<10 && valid_hashes)
     i=i+1;
-    %robot_loc = relocate(target_loc,robot_loc,targeted);
-    %pause(0.15)
-    %draw_step(target_loc,robot_loc,targeted);
     for r=1:robots
-        % threshold times sigmoid function based on distance
-        if (rand()<threshold(targeted(r))/(1+exp(-.2*(robot_array(r).distance(targeted(r))-15))))
-            robot_array(r).retarget(target_loc);
-            robot_array(r).adjust_velocity(target_loc);
-            targeted(r) = robot_array(r).target;
-            robot_array(r).distance_ordering(target_loc);
+        state = robot_array(r).get_state(targeted,targets);
+        hash = get_hash(state,robots,targets);
+        robot_array(r).target = get_action(policy_table,hash)+1;
+        targeted(r) = robot_array(r).target;
+        if targeted(r) <0
+            valid_hashes = false;
+            disp('PROBLEM');
         end
     end
-    threshold = set_threshold(target_sizes,targeted);
     su = zeros(1,targets);
-
     for t = 1:length(target_sizes)
         for r = 1:length(targeted)
             if targeted(r) == t
@@ -74,18 +70,41 @@ while (error_exists && i<1000)
             end
         end
     end
+    for tar=2:6
+        tmp_pk=1;
+        for a=0:state(tar)
+            tmp_pk=tmp_pk*0.405;
+        end
+        reward(i) = reward(i)+(1-tmp_pk-target_threshold(tar-1));
+    end
     error(i,:) =abs((su-target_sizes));
-
-    tot_err(i,1) = sum(error(i,:));
-
-    if tot_err(i,1)==0
+    tot_err(i) = sum(error(i,:));   
+    if tot_err(i)==0
         error_exists = false;
     end
-
 end
-toc
-figure(2)
-plot(tot_err);
+%targeted
+i;
+
+%figure(2)
+%plot(tot_err);
+plot(reward);
+err =tot_err(i);
+%{
+for tar=2:6
+    tmp_pk=1;
+    for a=0;state(tar)
+        tmp_pk=tmp_pk*0.405;
+    end
+    disp('Reward');
+    (1-tmp_pk)
+    disp('Threshold');
+    target_threshold(tar-1)
+end
+%}
+
+
+%end
 
 %plot(error(:,1),'r');
 %hold on
