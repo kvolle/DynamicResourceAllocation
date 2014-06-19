@@ -20,7 +20,7 @@ classdef agent < handle
             robot.heading = atan2(goal_dist(2),goal_dist(1));
             tot_dist = norm([goal_dist;0]);
             if tot_dist>0.5
-                robot.velocity = 0.25*[cos(robot.heading);sin(robot.heading)];
+                robot.velocity = 1*[cos(robot.heading);sin(robot.heading)];
             else
                 robot.velocity = [0;0];
             end
@@ -54,7 +54,7 @@ classdef agent < handle
             score = sum(abs(pk-target_pk));
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-        function retarget(robot,target_loc,target_pk)
+        function retarget_bn(robot,target_loc,target_pk)
             for i = 1:length(target_loc)
                 candidate_targets(i) = i;
             end
@@ -75,7 +75,35 @@ classdef agent < handle
             robot.target = new_target;
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-%{
+        function retarget_SA(robot,target_loc,target_pk)
+            for i = 1:length(target_loc)
+                candidate_targets(i) = i;
+                candidate_angle(i) = atan2(target_loc(2,i)-robot.location(2),target_loc(1,i)-robot.location(1))-robot.heading;
+            end
+            candidate_targets(robot.target) = [];
+            candidate_angle(robot.target) = [];
+
+            inverse_angle = zeros(1,length(candidate_angle));
+            sum = 0;
+            for d = 1:length(candidate_angle)
+                inverse_angle(d) = 1/candidate_angle(d) + sum;
+                sum = inverse_angle(d);
+            end
+            %probability = inverse_angle./sum;
+            %
+            for i =1:length(inverse_angle)
+                probability(i) = (1-isreal(log(1-target_pk-0.3625^robot.model(i))))*inverse_angle(i)/sum;
+            end
+            %}
+            Q = rand();
+            for i=1:length(probability)
+                if (Q<probability(i))
+                    robot.target = candidate_targets(i);
+                    return
+                end
+            end
+        end
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
         function state = get_state(robot,targeted,targets)
             state = zeros(1,targets+1);
             state(1) = targeted(robot.id+1)-1;
@@ -88,7 +116,6 @@ classdef agent < handle
             end
 
         end
-%}
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
     end
     properties
