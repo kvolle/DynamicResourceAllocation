@@ -12,7 +12,11 @@ targets = 30;
 robots = 150;
 
 % Define the sizes of the targets
-target_sizes = [2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7];
+target_size = [2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7,2,5,7,4,7];
+
+for z=1:length(target_size);
+    target_pk(z) = 1-0.3625^target_size(z);
+end
 
 %Instantiate targets spaced randomly
 target_loc = zeros(2,targets);
@@ -21,7 +25,7 @@ for i = 1:targets
 end
 
 % Declare the world object
-world = environment(target_sizes,target_loc);
+world = environment(target_pk,target_loc);
 
 % The negative one is for debugging since it should never exist after this
 % This will be replaced with communication eventually
@@ -37,55 +41,83 @@ for r = 1:robots
     robot_array(r).adjust_velocity(target_loc);
     % Fill the ground truth array of who everyone is targeting
     targeted(r) = robot_array(r).target;
+    robot_array(r).get_model(targeted,targets);
 end
-
-% Plot the scene
-%figure(1)
-%draw_step(target_loc,robot_loc,targeted);
-
-
-% Set the threshold for switching based on initial allocation
-threshold = set_threshold(target_sizes,targeted);
 
 error_exists = true;
 i = 0;
 tic
-while (error_exists && i<1000)
-    i=i+1;
-    %robot_loc = relocate(target_loc,robot_loc,targeted);
-    %pause(0.15)
-    %draw_step(target_loc,robot_loc,targeted);
+
+%figure(1)
+
+threshold = set_threshold(target_pk,targeted);
+while (error_exists && i<200)
+     i=i+1;
+     %{
+    clf
+    axis ([0 50 0 150])
+    hold on
+    for dr =1:robots
+        plot(robot_array(dr).location(1),robot_array(dr).location(2),'rh');
+    end
+    for dt = 1:targets
+        plot(target_loc(1,dt),target_loc(2,dt),'bh');
+    end
+    %pause(0.01)
+     %}
+    magic_number = floor(rand()*50);
     for r=1:robots
-        % threshold times sigmoid function based on distance
-        if (rand()<threshold(targeted(r))/(1+exp(-.2*(robot_array(r).distance(targeted(r))-15))))
-            robot_array(r).retarget(target_loc);
+        if (mod(r,50) == magic_number)
+%        if (rand()<threshold(targeted(r))/(1+exp(-.2*(robot_array(r).distance(targeted(r))-15))))
+            robot_array(r).retarget(target_loc,target_pk);
             robot_array(r).adjust_velocity(target_loc);
             targeted(r) = robot_array(r).target;
-            robot_array(r).distance_ordering(target_loc);
         end
+        robot_array(r).get_model(targeted,targets);
     end
-    threshold = set_threshold(target_sizes,targeted);
+    
+    threshold = set_threshold(target_pk,targeted);
+    
     su = zeros(1,targets);
-
-    for t = 1:length(target_sizes)
+    for t = 1:length(target_pk)
         for r = 1:length(targeted)
             if targeted(r) == t
                 su(t) = su(t)+1;
             end
         end
     end
-    error(i,:) =abs((su-target_sizes));
-
+    Pk = ones(1,length(target_pk))-0.3625.^su;
+    error(i,:) =abs((Pk-target_pk))/30;
+    error_cnt(i,:) = abs(su-target_size);
     tot_err(i,1) = sum(error(i,:));
+    tot_err_cnt(i,1) = sum(error_cnt(i,:));
 
     if tot_err(i,1)==0
         error_exists = false;
     end
-
+    for r=1:robots
+         robot_array(r).location = robot_array(r).location+robot_array(r).velocity;
+     end
 end
 toc
+
+%movie(M); 
+%movie2avi(M, 'armanimation.avi');
+%{
+figure(1)
+for i = 1:robots
+tmp(i) = robot_array(i).get_score(robot_array(i).model,target_pk);
+end
+plot(tmp)
+%}
+
 figure(2)
 plot(tot_err);
+title('Error using Pk For Threshold');
+xlabel('Iterations')
+ylabel('Average Difference from Desired Pk')
+figure(3)
+plot(tot_err_cnt);
 
 %plot(error(:,1),'r');
 %hold on

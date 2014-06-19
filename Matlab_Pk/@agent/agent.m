@@ -40,13 +40,13 @@ classdef agent < handle
             for t = 1:numTargets
                 for r = 1:length(targeted)
                     if targeted(r) == t
-                        r0bot.model(t) = robot.model(t)+1;
+                        robot.model(t) = robot.model(t)+1;
                     end
                 end
             end
         end
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
-        function retarget(robot,target_loc)
+        function retarget(robot,target_loc,target_pk)
             for i = 1:length(target_loc)
                 candidate_targets(i) = i;
                 candidate_angle(i) = atan2(target_loc(2,i)-robot.location(2),target_loc(1,i)-robot.location(1))-robot.heading;
@@ -60,7 +60,12 @@ classdef agent < handle
                 inverse_angle(d) = 1/candidate_angle(d) + sum;
                 sum = inverse_angle(d);
             end
-            probability = inverse_angle./sum;
+            %probability = inverse_angle./sum;
+            %
+            for i =1:length(inverse_angle)
+                probability(i) = (1-isreal(log(1-target_pk-0.3625^robot.model(i))))*inverse_angle(i)/sum;
+            end
+            %}
             Q = rand();
             for i=1:length(probability)
                 if (Q<probability(i))

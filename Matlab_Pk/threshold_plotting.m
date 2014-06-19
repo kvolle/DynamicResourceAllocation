@@ -2,11 +2,12 @@ clear all
 clc
 
 prob_table = zeros(10,21);
+%%%%% FIX THIS MESS
 for target_size = 1:10
-    target_pk = 1 - 0.3625^target_size;
-   for numAgents = 1:21
-       Pk = 1 - 0.3625^(numAgents-1);
-       prob_table(target_size,numAgents) =(0.5*(numAgents-target_size)/target_size)*isreal(log(0.3625)/log(Pk-target_pk));%log(0.3625)/log(Pk-target_pk)*isreal(log(0.3625)/log(Pk-target_pk));
+    target_pk = 0.55 +target_size/30;%1 - 0.3625^target_size;
+   for numAgents = 1:20
+       Pk = numAgents/20%1 - 0.3625^(numAgents-1);
+       prob_table(target_size,numAgents) =(log((1-Pk)/(1-target_pk))/log(0.3625))*isreal(log(1-0.3625^(numAgents-2)-target_pk))/20;%log(0.3625)/log(Pk-target_pk)*isreal(log(0.3625)/log(Pk-target_pk));
    end
 end
 
