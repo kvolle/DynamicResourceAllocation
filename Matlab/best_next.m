@@ -69,7 +69,7 @@ while (error_exists && i<200)
     for r=1:robots
         if (mod(r,50) == magic_number)
 %        if (rand()<threshold(targeted(r))/(1+exp(-.2*(robot_array(r).distance(targeted(r))-15))))
-            robot_array(r).retarget(target_loc,target_pk);
+            robot_array(r).retarget_bn(target_loc,target_pk);
             robot_array(r).adjust_velocity(target_loc);
             targeted(r) = robot_array(r).target;
         end
@@ -97,7 +97,8 @@ while (error_exists && i<200)
     end
     for r=1:robots
          robot_array(r).location = robot_array(r).location+robot_array(r).velocity;
-     end
+    end
+
 end
 toc
 
