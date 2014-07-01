@@ -48,6 +48,9 @@
 *.out
 *.synctex.gz
 
+# Media Files
+*.avi
+
 #GAMA Workspace Management
 /GAMA/.gama_application_workspace
 /GAMA/.gama_application_workspace/*
